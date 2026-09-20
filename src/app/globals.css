@@ -1,0 +1,549 @@
+@import "tailwindcss";
+
+/* ===========================================================
+   REPRESENTEI — Sistema visual "Talao"
+   Referencia: o bloco de pedido carbonado que o representante
+   carregou por 40 anos. Papel bone, tinta de caneta esferografica,
+   bordas picotadas de canhoto, carimbo de PAGO/VENCIDO e as cores
+   das vias carbonadas (rosa, amarela, azul, verde) como semantica
+   de status.
+   =========================================================== */
+
+@custom-variant estrada (&:where([data-theme="estrada"], [data-theme="estrada"] *));
+
+@theme {
+  /* --- superficies --- */
+  --color-papel: #f1ebdf;
+  --color-papel-alto: #fbf8f1;
+  --color-papel-fundo: #e5dccb;
+  --color-papel-borda: #d6cab2;
+
+  /* --- tinta --- */
+  --color-tinta: #16171c;
+  --color-tinta-2: #4b4a52;
+  --color-tinta-3: #837f72;
+
+  /* --- marca: azul de caneta esferografica --- */
+  --color-caneta: #1b34c4;
+  --color-caneta-claro: #3d55e8;
+  --color-caneta-fundo: #e3e5fa;
+
+  /* --- carimbos --- */
+  --color-carimbo: #c62439;
+  --color-carimbo-fundo: #f8dfe2;
+  --color-quitado: #12775a;
+  --color-quitado-fundo: #d7ece4;
+  --color-ambar: #cf7c11;
+  --color-ambar-fundo: #fbebd2;
+
+  /* --- vias carbonadas (status) --- */
+  --color-via-rosa: #e09aa8;
+  --color-via-amarela: #e8c860;
+  --color-via-azul: #88a9d4;
+  --color-via-verde: #8fc0a3;
+
+  /* --- curvas ABC --- */
+  --color-curva-a: #12775a;
+  --color-curva-b: #1b34c4;
+  --color-curva-c: #cf7c11;
+  --color-curva-d: #837f72;
+
+  /* --- gráficos: paleta validada (contraste + daltonismo) --- */
+  --color-graf-recebido: #1f9a72;
+  --color-graf-receber: #4059e6;
+  --color-graf-vencido: #d93f4f;
+  --color-graf-grade: color-mix(in oklab, var(--color-tinta) 11%, transparent);
+
+  /* --- tipografia --- */
+  --font-display: var(--fonte-display), "Bricolage Grotesque", ui-sans-serif, sans-serif;
+  --font-sans: var(--fonte-sans), "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--fonte-mono), "DM Mono", ui-monospace, monospace;
+
+  /* --- raios: canhoto tem canto vivo, cartao tem canto macio --- */
+  --radius-canhoto: 3px;
+  --radius-cartao: 14px;
+  --radius-bolha: 999px;
+
+  /* --- sombras: papel empilhado, nao neon --- */
+  --color-graf-recebido: #25ae82;
+  --color-graf-receber: #6b80fe;
+  --color-graf-vencido: #ee5163;
+  --color-graf-grade: color-mix(in oklab, var(--color-tinta) 15%, transparent);
+
+  --shadow-papel: 0 1px 0 0 rgb(0 0 0 / 0.04), 0 2px 6px -2px rgb(64 52 28 / 0.14);
+  --shadow-erguido: 0 2px 0 0 rgb(0 0 0 / 0.05), 0 12px 28px -12px rgb(64 52 28 / 0.35);
+  --shadow-grampo: 0 14px 40px -18px rgb(27 52 196 / 0.55);
+
+  --ease-talao: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ---------- MODO ESTRADA (escuro, para dirigir a noite) ---------- */
+[data-theme="estrada"] {
+  --color-papel: #131419;
+  --color-papel-alto: #1b1d25;
+  --color-papel-fundo: #0d0e12;
+  --color-papel-borda: #2c2f3a;
+
+  --color-tinta: #f3eee3;
+  --color-tinta-2: #b4b0a6;
+  --color-tinta-3: #7d7a73;
+
+  --color-caneta: #7186ff;
+  --color-caneta-claro: #9aa8ff;
+  --color-caneta-fundo: #1d2145;
+
+  --color-carimbo: #ff6b7d;
+  --color-carimbo-fundo: #3a1a20;
+  --color-quitado: #4fd2a2;
+  --color-quitado-fundo: #10322a;
+  --color-ambar: #f2b04a;
+  --color-ambar-fundo: #3a2a13;
+
+  --color-via-rosa: #a46f79;
+  --color-via-amarela: #a8934a;
+  --color-via-azul: #6982a8;
+  --color-via-verde: #6a9a7e;
+
+  --color-curva-a: #4fd2a2;
+  --color-curva-b: #7186ff;
+  --color-curva-c: #f2b04a;
+  --color-curva-d: #7d7a73;
+
+  --shadow-papel: 0 1px 0 0 rgb(255 255 255 / 0.03), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+  --shadow-erguido: 0 2px 0 0 rgb(255 255 255 / 0.04), 0 16px 34px -16px rgb(0 0 0 / 0.9);
+  --shadow-grampo: 0 14px 40px -18px rgb(113 134 255 / 0.5);
+}
+
+/* ===========================================================
+   BASE
+   =========================================================== */
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: var(--color-papel-fundo);
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+[data-theme="estrada"] html,
+html[data-theme="estrada"] {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-papel);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv05" 1, "ss01" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1.04;
+}
+
+::selection {
+  background: var(--color-caneta);
+  color: #fff;
+}
+
+/* barra de rolagem discreta */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-tinta-3) 45%, transparent);
+  border-radius: 999px;
+  border: 3px solid var(--color-papel);
+}
+
+/* Tudo daqui até o mapa entra na camada `components`, para que os
+   utilitários do Tailwind (px-, border-, bg-) possam sobrescrever. */
+@layer components {
+
+/* ===========================================================
+   TEXTURA — o que faz parecer papel e nao tela
+   =========================================================== */
+
+/* grao fino aplicado uma unica vez sobre o app inteiro */
+.grao::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.42;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E");
+}
+
+[data-theme="estrada"] .grao::after {
+  mix-blend-mode: screen;
+  opacity: 0.2;
+}
+
+/* pauta de livro-caixa */
+.pauta {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 27px,
+    color-mix(in oklab, var(--color-caneta) 9%, transparent) 27px,
+    color-mix(in oklab, var(--color-caneta) 9%, transparent) 28px
+  );
+}
+
+/* margem vermelha do caderno */
+.margem-caderno {
+  position: relative;
+}
+.margem-caderno::before {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in oklab, var(--color-carimbo) 40%, transparent);
+}
+
+/* ===========================================================
+   CANHOTO — o cartao-assinatura do sistema
+   Borda inferior picotada, como via destacavel de talao.
+   =========================================================== */
+
+.canhoto {
+  position: relative;
+  background: var(--color-papel-alto);
+  border: 1px solid var(--color-papel-borda);
+  border-radius: var(--radius-cartao);
+  box-shadow: var(--shadow-papel);
+}
+
+.picote {
+  position: relative;
+}
+.picote::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 8px;
+  background-image: radial-gradient(
+    circle at 6px 8px,
+    var(--color-papel) 3.5px,
+    transparent 4px
+  );
+  background-size: 12px 8px;
+  background-repeat: repeat-x;
+  pointer-events: none;
+}
+
+/* linha tracejada de destaque, com a tesourinha opcional */
+.linha-picotada {
+  border-top: 1.5px dashed color-mix(in oklab, var(--color-tinta-3) 55%, transparent);
+}
+
+/* ===========================================================
+   CARIMBO
+   =========================================================== */
+
+.carimbo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.6rem;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  opacity: 0.92;
+  transform: rotate(-3.5deg);
+}
+
+.carimbo-grande {
+  font-size: 1.15rem;
+  letter-spacing: 0.2em;
+  padding: 0.4rem 1rem;
+  border-width: 3px;
+  transform: rotate(-8deg);
+}
+
+@keyframes bater-carimbo {
+  0% { transform: rotate(-8deg) scale(2.4); opacity: 0; filter: blur(3px); }
+  60% { transform: rotate(-8deg) scale(0.94); opacity: 1; filter: blur(0); }
+  80% { transform: rotate(-8deg) scale(1.04); }
+  100% { transform: rotate(-8deg) scale(1); opacity: 0.92; }
+}
+.carimbo-batendo {
+  animation: bater-carimbo 0.5s var(--ease-talao) both;
+}
+
+/* ===========================================================
+   ETIQUETAS / CHIPS
+   =========================================================== */
+
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* ===========================================================
+   MOVIMENTO — entradas escalonadas, nada de piscar
+   =========================================================== */
+
+@keyframes subir {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes surgir {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes deslizar-lateral {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes escrever {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes pulsar-ponto {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
+}
+@keyframes rodar {
+  to { transform: rotate(360deg); }
+}
+@keyframes brilho-passando {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(220%); }
+}
+
+.anim-subir { animation: subir 0.5s var(--ease-talao) both; }
+.anim-surgir { animation: surgir 0.4s ease both; }
+.anim-lateral { animation: deslizar-lateral 0.45s var(--ease-talao) both; }
+.anim-rodar { animation: rodar 0.9s linear infinite; }
+.ponto-vivo { animation: pulsar-ponto 2s ease-in-out infinite; }
+
+.escala > * { animation: subir 0.5s var(--ease-talao) both; }
+.escala > *:nth-child(1) { animation-delay: 0.02s; }
+.escala > *:nth-child(2) { animation-delay: 0.06s; }
+.escala > *:nth-child(3) { animation-delay: 0.1s; }
+.escala > *:nth-child(4) { animation-delay: 0.14s; }
+.escala > *:nth-child(5) { animation-delay: 0.18s; }
+.escala > *:nth-child(6) { animation-delay: 0.22s; }
+.escala > *:nth-child(7) { animation-delay: 0.26s; }
+.escala > *:nth-child(8) { animation-delay: 0.3s; }
+.escala > *:nth-child(9) { animation-delay: 0.34s; }
+.escala > *:nth-child(10) { animation-delay: 0.38s; }
+.escala > *:nth-child(n + 11) { animation-delay: 0.42s; }
+
+/* traco que se desenha (rota, assinatura, grafico) */
+.traco-desenhando {
+  stroke-dasharray: var(--comprimento, 1200);
+  stroke-dashoffset: var(--comprimento, 1200);
+  animation: escrever 1.6s var(--ease-talao) 0.15s forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===========================================================
+   CONTROLES
+   =========================================================== */
+
+.campo {
+  width: 100%;
+  background: var(--color-papel);
+  border: 1.5px solid var(--color-papel-borda);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.9375rem;
+  color: var(--color-tinta);
+  transition: border-color 0.16s, box-shadow 0.16s, background 0.16s;
+}
+.campo::placeholder { color: var(--color-tinta-3); }
+.campo:focus {
+  outline: none;
+  border-color: var(--color-caneta);
+  box-shadow: 0 0 0 3.5px color-mix(in oklab, var(--color-caneta) 18%, transparent);
+  background: var(--color-papel-alto);
+}
+.campo:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.rotulo {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-tinta-3);
+  margin-bottom: 0.4rem;
+}
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 10px;
+  padding: 0.7rem 1.1rem;
+  transition: transform 0.12s var(--ease-talao), box-shadow 0.16s, background 0.16s, border-color 0.16s;
+  user-select: none;
+  cursor: pointer;
+}
+.botao:active { transform: translateY(1px) scale(0.985); }
+.botao:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.botao-tinta {
+  background: var(--color-caneta);
+  color: #fff;
+  box-shadow: var(--shadow-grampo);
+}
+.botao-tinta:hover:not(:disabled) { background: var(--color-caneta-claro); }
+
+.botao-papel {
+  background: var(--color-papel-alto);
+  color: var(--color-tinta);
+  border: 1.5px solid var(--color-papel-borda);
+}
+.botao-papel:hover:not(:disabled) { border-color: var(--color-tinta-3); }
+
+.botao-fantasma {
+  background: transparent;
+  color: var(--color-tinta-2);
+}
+.botao-fantasma:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-tinta) 6%, transparent);
+  color: var(--color-tinta);
+}
+
+/* area de toque confortavel no campo */
+@media (pointer: coarse) {
+  .botao { min-height: 46px; }
+  .campo { min-height: 46px; font-size: 16px; } /* 16px evita zoom no iOS */
+}
+
+/* ===========================================================
+   NUMEROS
+   =========================================================== */
+
+.cifra {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.numeral {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+}
+
+/* ===========================================================
+   MAPA (Leaflet) vestido de papel
+   =========================================================== */
+
+.leaflet-container {
+  background: var(--color-papel-fundo) !important;
+  font-family: var(--font-sans) !important;
+}
+.leaflet-tile-pane {
+  filter: saturate(0.62) contrast(0.94) brightness(1.03) sepia(0.14);
+}
+[data-theme="estrada"] .leaflet-tile-pane {
+  filter: invert(0.92) hue-rotate(185deg) saturate(0.55) brightness(0.95) contrast(0.92);
+}
+.leaflet-control-attribution {
+  background: color-mix(in oklab, var(--color-papel) 82%, transparent) !important;
+  color: var(--color-tinta-3) !important;
+  font-size: 9px !important;
+}
+.leaflet-control-attribution a { color: var(--color-tinta-2) !important; }
+.leaflet-bar a {
+  background: var(--color-papel-alto) !important;
+  color: var(--color-tinta) !important;
+  border-color: var(--color-papel-borda) !important;
+}
+.pino-parada {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* ===========================================================
+   UTILITARIOS
+   =========================================================== */
+
+.sem-barra::-webkit-scrollbar { display: none; }
+.sem-barra { scrollbar-width: none; -ms-overflow-style: none; }
+
+.area-segura-baixo { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.area-segura-cima { padding-top: env(safe-area-inset-top, 0px); }
+
+.vidro {
+  background: color-mix(in oklab, var(--color-papel) 86%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.risco {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: var(--color-carimbo);
+}
+
+/* esqueleto de carregamento com brilho de papel */
+.esqueleto {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--color-tinta) 7%, transparent);
+  border-radius: 8px;
+}
+.esqueleto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--color-papel-alto) 75%, transparent),
+    transparent
+  );
+  animation: brilho-passando 1.5s infinite;
+}
+
+/* foco visivel e bonito em todo lugar */
+:focus-visible {
+  outline: 2.5px solid var(--color-caneta);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

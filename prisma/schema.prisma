@@ -1,0 +1,963 @@
+// Representei — modelo de dados
+// O talao digital do representante comercial.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USUARIO / CONFIGURACOES
+// ============================================================
+
+model User {
+  id        String  @id @default(cuid())
+  nome      String
+  email     String  @unique
+  senhaHash String
+  telefone  String?
+  whatsapp  String?
+  cpfCnpj   String?
+  avatarUrl String?
+
+  // Base da rota: de onde o representante sai todo dia
+  baseLabel  String? @default("Minha base")
+  baseCep    String?
+  baseRua    String?
+  baseNum    String?
+  baseBairro String?
+  baseCidade String?
+  baseUf     String?
+  baseLat    Float?
+  baseLng    Float?
+
+  metaMensal     Decimal @default(0) @db.Decimal(14, 2)
+  metaVisitasDia Int     @default(8)
+  jornadaInicio  String  @default("08:00")
+  jornadaFim     String  @default("18:00")
+  almocoInicio   String  @default("12:00")
+  almocoMinutos  Int     @default(60)
+
+  tema            String  @default("papel") // papel | estrada | auto
+  onboardingFeito Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  veiculos      Vehicle[]
+  representadas Representada[]
+  clientes      Client[]
+  regioes       Region[]
+  agenda        AgendaEvent[]
+  rotas         Route[]
+  pedidos       Order[]
+  comissoes     Commission[]
+  atividades    Activity[]
+  notificacoes  Notification[]
+  pushSubs      PushSubscription[]
+  importacoes   ImportJob[]
+
+  @@map("usuarios")
+}
+
+// ============================================================
+// VEICULO / CUSTO DE RODAGEM
+// ============================================================
+
+enum Combustivel {
+  GASOLINA
+  ETANOL
+  DIESEL
+  GNV
+  ELETRICO
+}
+
+model Vehicle {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  apelido String
+  marca   String?
+  modelo  String?
+  ano     Int?
+  placa   String?
+  cor     String?
+
+  combustivel    Combustivel @default(GASOLINA)
+  flex           Boolean     @default(false)
+  consumoCidade  Float       @default(10) // km/l
+  consumoEstrada Float       @default(13) // km/l
+
+  precoGasolina Decimal @default(6.09) @db.Decimal(8, 3)
+  precoEtanol   Decimal @default(4.29) @db.Decimal(8, 3)
+  precoDiesel   Decimal @default(6.19) @db.Decimal(8, 3)
+  precoKwh      Decimal @default(0.95) @db.Decimal(8, 3)
+
+  // Custo alem do combustivel: pneu, oleo, revisao, depreciacao
+  custoManutencaoKm Decimal @default(0.35) @db.Decimal(8, 3)
+  pedagioMedioDia   Decimal @default(0) @db.Decimal(10, 2)
+
+  hodometro Int?
+  padrao    Boolean @default(false)
+  ativo     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rotas       Route[]
+  abastecidas Refuel[]
+
+  @@index([userId])
+  @@map("veiculos")
+}
+
+model Refuel {
+  id          String      @id @default(cuid())
+  vehicleId   String
+  vehicle     Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  data        DateTime    @default(now())
+  litros      Float
+  valorLitro  Decimal     @db.Decimal(8, 3)
+  valorTotal  Decimal     @db.Decimal(10, 2)
+  hodometro   Int?
+  posto       String?
+  tanqueCheio Boolean     @default(true)
+  combustivel Combustivel @default(GASOLINA)
+
+  @@index([vehicleId, data])
+  @@map("abastecimentos")
+}
+
+// ============================================================
+// REPRESENTADA (fabricante/fornecedor que o rep representa)
+// ============================================================
+
+enum StatusRepresentada {
+  ATIVA
+  PAUSADA
+  ENCERRADA
+  PROSPECCAO
+}
+
+model Representada {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  razaoSocial       String
+  nomeFantasia      String?
+  cnpj              String?
+  inscricaoEstadual String?
+  segmento          String?
+  site              String?
+  logoUrl           String?
+  cor               String  @default("#1B3BD8") // identidade visual no app
+
+  email    String?
+  telefone String?
+  whatsapp String?
+
+  contatoNome  String?
+  contatoCargo String?
+  contatoEmail String?
+  contatoFone  String?
+
+  cep         String?
+  logradouro  String?
+  numero      String?
+  complemento String?
+  bairro      String?
+  cidade      String?
+  uf          String?
+
+  status           StatusRepresentada @default(ATIVA)
+  contratoInicio   DateTime?
+  contratoFim      DateTime?
+  exclusividade    Boolean            @default(false)
+  territorio       String?
+  prazoEntregaDias Int?
+  pedidoMinimo     Decimal?           @db.Decimal(12, 2)
+  metaMensal       Decimal            @default(0) @db.Decimal(14, 2)
+  observacoes      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  planos     CommissionPlan[]
+  produtos   Product[]
+  pedidos    Order[]
+  comissoes  Commission[]
+  clientes   ClientRepresentada[]
+  agenda     AgendaEvent[]
+  atividades Activity[]
+
+  @@index([userId])
+  @@map("representadas")
+}
+
+// ============================================================
+// PLANO DE COMISSAO
+// ============================================================
+
+enum BaseCalculo {
+  VALOR_BRUTO // total do pedido
+  VALOR_LIQUIDO // sem impostos/frete
+  VALOR_RECEBIDO // so sobre o que o cliente efetivamente pagou
+  MARGEM // sobre a margem de contribuicao
+}
+
+enum GatilhoComissao {
+  EMISSAO_PEDIDO
+  EMISSAO_NF
+  ENTREGA
+  PAGAMENTO_CLIENTE
+  DATA_FIXA
+}
+
+enum Periodicidade {
+  POR_PEDIDO
+  SEMANAL
+  QUINZENAL
+  MENSAL
+  BIMESTRAL
+}
+
+enum FormaRecebimento {
+  PIX
+  TED
+  BOLETO
+  DEPOSITO
+  NOTA_SERVICO
+  DINHEIRO
+}
+
+enum TipoFaixa {
+  UNICO // percentual fixo
+  PROGRESSIVO // faixas por volume no periodo
+  POR_LINHA // percentual por linha/produto
+}
+
+model CommissionPlan {
+  id             String       @id @default(cuid())
+  representadaId String
+  representada   Representada @relation(fields: [representadaId], references: [id], onDelete: Cascade)
+
+  nome           String    @default("Plano padrao")
+  ativo          Boolean   @default(true)
+  padrao         Boolean   @default(false)
+  vigenciaInicio DateTime?
+  vigenciaFim    DateTime?
+
+  baseCalculo      BaseCalculo @default(VALOR_LIQUIDO)
+  tipoFaixa        TipoFaixa   @default(UNICO)
+  percentualPadrao Decimal     @default(5) @db.Decimal(6, 3)
+
+  gatilho          GatilhoComissao  @default(PAGAMENTO_CLIENTE)
+  prazoDias        Int              @default(30) // dias apos o gatilho
+  periodicidade    Periodicidade    @default(MENSAL)
+  diaPagamento     Int? // dia do mes em que a representada paga
+  formaRecebimento FormaRecebimento @default(PIX)
+
+  emiteNotaServico      Boolean @default(false)
+  impostoPercentual     Decimal @default(0) @db.Decimal(6, 3) // ISS/IRRF retido
+  descontaDevolucao     Boolean @default(true)
+  descontaInadimplencia Boolean @default(true)
+  antecipavel           Boolean @default(false)
+
+  // Bonus por meta batida no periodo
+  bonusMeta       Decimal? @db.Decimal(14, 2)
+  bonusPercentual Decimal? @db.Decimal(6, 3)
+  metaPeriodo     Decimal? @db.Decimal(14, 2)
+
+  observacoes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  faixas    CommissionTier[]
+  pedidos   Order[]
+  comissoes Commission[]
+
+  @@index([representadaId])
+  @@map("planos_comissao")
+}
+
+model CommissionTier {
+  id     String         @id @default(cuid())
+  planId String
+  plano  CommissionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  rotulo     String?
+  deValor    Decimal  @default(0) @db.Decimal(14, 2)
+  ateValor   Decimal? @db.Decimal(14, 2)
+  percentual Decimal  @db.Decimal(6, 3)
+  ordem      Int      @default(0)
+
+  @@index([planId])
+  @@map("faixas_comissao")
+}
+
+// ============================================================
+// REGIAO / CLIENTE
+// ============================================================
+
+model Region {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  nome    String
+  cor     String   @default("#E0623A")
+  uf      String?
+  cidades String[] @default([])
+  // Dia da semana preferido para atender a regiao (0=dom .. 6=sab)
+  diaSemana   Int?
+  observacoes String?
+
+  createdAt DateTime @default(now())
+
+  clientes Client[]
+
+  @@index([userId])
+  @@map("regioes")
+}
+
+enum TipoPessoa {
+  PJ
+  PF
+}
+
+enum Curva {
+  A
+  B
+  C
+  D
+}
+
+enum StatusCliente {
+  PROSPECT
+  ATIVO
+  INATIVO
+  EM_RISCO
+  BLOQUEADO
+  PERDIDO
+}
+
+model Client {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tipoPessoa         TipoPessoa @default(PJ)
+  cnpj               String?
+  cpf                String?
+  razaoSocial        String
+  nomeFantasia       String?
+  inscricaoEstadual  String?
+  inscricaoMunicipal String?
+
+  // Enriquecimento automatico via CNPJ
+  situacaoCadastral String?
+  cnaePrincipal     String?
+  cnaeDescricao     String?
+  porte             String?
+  naturezaJuridica  String?
+  dataAbertura      DateTime?
+  capitalSocial     Decimal?  @db.Decimal(16, 2)
+  socios            Json?
+  enriquecidoEm     DateTime?
+
+  email    String?
+  telefone String?
+  whatsapp String?
+  site     String?
+
+  contatoNome       String?
+  contatoCargo      String?
+  contatoEmail      String?
+  contatoFone       String?
+  contatoNascimento DateTime?
+
+  cep             String?
+  logradouro      String?
+  numero          String?
+  complemento     String?
+  bairro          String?
+  cidade          String?
+  uf              String?
+  pais            String?   @default("BR")
+  lat             Float?
+  lng             Float?
+  geocodadoEm     DateTime?
+  pontoReferencia String?
+
+  regionId String?
+  regiao   Region? @relation(fields: [regionId], references: [id], onDelete: SetNull)
+
+  curva           Curva         @default(C)
+  curvaAutomatica Boolean       @default(true)
+  status          StatusCliente @default(PROSPECT)
+  potencialMensal Decimal?      @db.Decimal(14, 2)
+
+  // Roteirizacao / agenda
+  frequenciaVisitaDias Int     @default(30)
+  tempoVisitaMin       Int     @default(40)
+  diasAtendimento      Int[]   @default([1, 2, 3, 4, 5])
+  horaAbre             String? @default("08:00")
+  horaFecha            String? @default("18:00")
+  horarioAlmoco        String?
+
+  limiteCredito     Decimal? @db.Decimal(14, 2)
+  condicaoPagamento String?
+  tags              String[] @default([])
+  origem            String?
+  observacoes       String?
+
+  ultimaVisitaEm  DateTime?
+  ultimoPedidoEm  DateTime?
+  proximaVisitaEm DateTime?
+  totalComprado   Decimal   @default(0) @db.Decimal(14, 2)
+  qtdPedidos      Int       @default(0)
+  ticketMedio     Decimal   @default(0) @db.Decimal(14, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  representadas ClientRepresentada[]
+  agenda        AgendaEvent[]
+  paradas       RouteStop[]
+  pedidos       Order[]
+  atividades    Activity[]
+
+  @@index([userId, status])
+  @@index([userId, regionId])
+  @@index([cnpj])
+  @@map("clientes")
+}
+
+model ClientRepresentada {
+  id             String       @id @default(cuid())
+  clientId       String
+  cliente        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  representadaId String
+  representada   Representada @relation(fields: [representadaId], references: [id], onDelete: Cascade)
+
+  codigoNoFornecedor String?
+  desde              DateTime?
+  observacoes        String?
+
+  @@unique([clientId, representadaId])
+  @@map("clientes_representadas")
+}
+
+// ============================================================
+// AGENDA
+// ============================================================
+
+enum TipoCompromisso {
+  VISITA
+  PROSPECCAO
+  COBRANCA
+  ENTREGA
+  REUNIAO
+  TREINAMENTO
+  POS_VENDA
+  PESSOAL
+}
+
+enum StatusCompromisso {
+  PLANEJADO
+  CONFIRMADO
+  EM_ROTA
+  EM_ATENDIMENTO
+  CONCLUIDO
+  CANCELADO
+  REAGENDADO
+  NAO_ATENDIDO
+}
+
+enum ResultadoVisita {
+  PEDIDO
+  ORCAMENTO
+  SEM_PEDIDO
+  CLIENTE_AUSENTE
+  AGENDOU_RETORNO
+  RECLAMACAO
+}
+
+model AgendaEvent {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  cliente  Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  representadaId String?
+  representada   Representada? @relation(fields: [representadaId], references: [id], onDelete: SetNull)
+
+  tipo      TipoCompromisso   @default(VISITA)
+  status    StatusCompromisso @default(PLANEJADO)
+  resultado ResultadoVisita?
+
+  titulo    String
+  descricao String?
+  local     String?
+
+  inicio     DateTime
+  fim        DateTime
+  diaInteiro Boolean  @default(false)
+
+  checkinEm         DateTime?
+  checkinLat        Float?
+  checkinLng        Float?
+  checkinDistanciaM Int?
+  checkoutEm        DateTime?
+
+  notas             String?
+  lembreteMin       Int?      @default(30)
+  lembreteEnviadoEm DateTime?
+  geradoAuto        Boolean   @default(false)
+
+  routeStopId String?    @unique
+  routeStop   RouteStop? @relation(fields: [routeStopId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, inicio])
+  @@index([clientId])
+  @@map("agenda")
+}
+
+// ============================================================
+// ROTAS
+// ============================================================
+
+enum ModoRota {
+  RAPIDO
+  ECONOMICO
+  EQUILIBRADO
+}
+
+enum StatusRota {
+  RASCUNHO
+  PLANEJADA
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+model Route {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  nome String
+  data DateTime
+
+  vehicleId String?
+  veiculo   Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  modo   ModoRota   @default(EQUILIBRADO)
+  status StatusRota @default(RASCUNHO)
+
+  origemLabel String?
+  origemLat   Float?
+  origemLng   Float?
+  retornaBase Boolean @default(true)
+
+  distanciaKm      Float   @default(0)
+  duracaoMin       Int     @default(0)
+  consumoLitros    Float   @default(0)
+  custoCombustivel Decimal @default(0) @db.Decimal(10, 2)
+  custoManutencao  Decimal @default(0) @db.Decimal(10, 2)
+  custoPedagio     Decimal @default(0) @db.Decimal(10, 2)
+  custoTotal       Decimal @default(0) @db.Decimal(10, 2)
+
+  // Comparativo: quanto a otimizacao economizou vs. a ordem original
+  kmEconomizados    Float   @default(0)
+  reaisEconomizados Decimal @default(0) @db.Decimal(10, 2)
+
+  provider    String    @default("osrm") // osrm | google | haversine
+  polyline    String?
+  iniciadaEm  DateTime?
+  concluidaEm DateTime?
+  observacoes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  paradas RouteStop[]
+
+  @@index([userId, data])
+  @@map("rotas")
+}
+
+enum StatusParada {
+  PENDENTE
+  EM_ROTA
+  VISITADO
+  PULADO
+}
+
+model RouteStop {
+  id      String @id @default(cuid())
+  routeId String
+  rota    Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  cliente  Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  ordem  Int
+  label  String
+  lat    Float
+  lng    Float
+  status StatusParada @default(PENDENTE)
+
+  distanciaAnteriorKm Float     @default(0)
+  duracaoAnteriorMin  Int       @default(0)
+  chegadaPrevista     DateTime?
+  saidaPrevista       DateTime?
+  permanenciaMin      Int       @default(40)
+  fixo                Boolean   @default(false) // nao reordenar (hora marcada)
+
+  agendaEvent AgendaEvent?
+
+  @@index([routeId, ordem])
+  @@map("paradas")
+}
+
+// ============================================================
+// PRODUTOS / PEDIDOS
+// ============================================================
+
+model Product {
+  id             String       @id @default(cuid())
+  representadaId String
+  representada   Representada @relation(fields: [representadaId], references: [id], onDelete: Cascade)
+
+  codigo             String
+  descricao          String
+  unidade            String   @default("UN")
+  precoTabela        Decimal  @default(0) @db.Decimal(14, 4)
+  ncm                String?
+  linha              String?
+  comissaoPercentual Decimal? @db.Decimal(6, 3)
+  descontoMax        Decimal? @db.Decimal(6, 3)
+  ativo              Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+
+  itens OrderItem[]
+
+  @@unique([representadaId, codigo])
+  @@index([representadaId])
+  @@map("produtos")
+}
+
+enum StatusPedido {
+  RASCUNHO
+  ENVIADO
+  APROVADO
+  FATURADO
+  ENTREGUE
+  CANCELADO
+  DEVOLVIDO
+}
+
+enum OrigemPedido {
+  MANUAL
+  PDF
+  PLANILHA
+  API
+}
+
+enum TipoFrete {
+  CIF
+  FOB
+  SEM_FRETE
+}
+
+model Order {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  clientId String
+  cliente  Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  representadaId String
+  representada   Representada @relation(fields: [representadaId], references: [id], onDelete: Restrict)
+
+  planId String?
+  plano  CommissionPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  numero           String
+  numeroFornecedor String?
+  data             DateTime     @default(now())
+  status           StatusPedido @default(ENVIADO)
+  origem           OrigemPedido @default(MANUAL)
+
+  valorBruto         Decimal @default(0) @db.Decimal(14, 2)
+  descontoValor      Decimal @default(0) @db.Decimal(14, 2)
+  descontoPercentual Decimal @default(0) @db.Decimal(6, 3)
+  valorFrete         Decimal @default(0) @db.Decimal(14, 2)
+  valorImpostos      Decimal @default(0) @db.Decimal(14, 2)
+  valorLiquido       Decimal @default(0) @db.Decimal(14, 2)
+
+  tipoFrete          TipoFrete @default(CIF)
+  condicaoPagamento  String?   @default("30/60/90")
+  parcelas           Int       @default(1)
+  prazoMedioDias     Int       @default(30)
+  primeiroVencimento DateTime?
+
+  comissaoBase       Decimal @default(0) @db.Decimal(14, 2)
+  comissaoPercentual Decimal @default(0) @db.Decimal(6, 3)
+  comissaoValor      Decimal @default(0) @db.Decimal(14, 2)
+  comissaoManual     Boolean @default(false)
+
+  notaFiscalNumero String?
+  notaFiscalSerie  String?
+  notaFiscalData   DateTime?
+  notaFiscalChave  String?
+  notaFiscalValor  Decimal?  @db.Decimal(14, 2)
+
+  arquivoNome String?
+  arquivoUrl  String?
+  observacoes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  itens      OrderItem[]
+  comissoes  Commission[]
+  atividades Activity[]
+
+  @@unique([userId, numero])
+  @@index([userId, data])
+  @@index([clientId])
+  @@index([representadaId])
+  @@map("pedidos")
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  pedido  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String?
+  produto   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  codigo             String?
+  descricao          String
+  unidade            String   @default("UN")
+  quantidade         Decimal  @default(1) @db.Decimal(14, 4)
+  precoUnitario      Decimal  @default(0) @db.Decimal(14, 4)
+  descontoPercentual Decimal  @default(0) @db.Decimal(6, 3)
+  total              Decimal  @default(0) @db.Decimal(14, 2)
+  comissaoPercentual Decimal? @db.Decimal(6, 3)
+  ordem              Int      @default(0)
+
+  @@index([orderId])
+  @@map("itens_pedido")
+}
+
+// ============================================================
+// COMISSOES A RECEBER
+// ============================================================
+
+enum StatusComissao {
+  PREVISTA
+  A_RECEBER
+  VENCIDA
+  PARCIAL
+  RECEBIDA
+  GLOSADA
+  CANCELADA
+}
+
+model Commission {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  orderId String?
+  pedido  Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  representadaId String
+  representada   Representada @relation(fields: [representadaId], references: [id], onDelete: Cascade)
+
+  planId String?
+  plano  CommissionPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  descricao     String
+  competencia   String // AAAA-MM
+  parcela       Int    @default(1)
+  totalParcelas Int    @default(1)
+
+  valorPrevisto Decimal @default(0) @db.Decimal(14, 2)
+  valorRecebido Decimal @default(0) @db.Decimal(14, 2)
+  valorImposto  Decimal @default(0) @db.Decimal(14, 2)
+  valorLiquido  Decimal @default(0) @db.Decimal(14, 2)
+
+  vencimento DateTime
+  recebidoEm DateTime?
+  status     StatusComissao @default(PREVISTA)
+
+  formaRecebimento  FormaRecebimento?
+  notaServicoNumero String?
+  comprovanteNome   String?
+  comprovanteUrl    String?
+  motivoGlosa       String?
+  observacoes       String?
+
+  lembrete3d     Boolean @default(false)
+  lembreteDia    Boolean @default(false)
+  lembreteAtraso Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pagamentos CommissionPayment[]
+
+  @@index([userId, status, vencimento])
+  @@index([representadaId])
+  @@map("comissoes")
+}
+
+model CommissionPayment {
+  id           String     @id @default(cuid())
+  commissionId String
+  comissao     Commission @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+
+  valor           Decimal          @db.Decimal(14, 2)
+  data            DateTime         @default(now())
+  forma           FormaRecebimento @default(PIX)
+  comprovanteNome String?
+  comprovanteUrl  String?
+  observacao      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([commissionId])
+  @@map("baixas_comissao")
+}
+
+// ============================================================
+// TIMELINE / NOTIFICACOES / IMPORTACAO
+// ============================================================
+
+model Activity {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  cliente  Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  representadaId String?
+  representada   Representada? @relation(fields: [representadaId], references: [id], onDelete: Cascade)
+
+  orderId String?
+  pedido  Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  tipo      String // visita, ligacao, whatsapp, email, pedido, comissao, nota, sistema
+  titulo    String
+  descricao String?
+  meta      Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([clientId, createdAt])
+  @@map("atividades")
+}
+
+enum TipoNotificacao {
+  ROTA_DO_DIA
+  VISITA_PROXIMA
+  CLIENTE_EM_RISCO
+  COMISSAO_A_VENCER
+  COMISSAO_VENCIDA
+  COMISSAO_RECEBIDA
+  PEDIDO_FATURADO
+  META
+  ANIVERSARIO
+  SISTEMA
+}
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tipo   TipoNotificacao @default(SISTEMA)
+  titulo String
+  corpo  String
+  url    String?
+  icone  String?
+
+  lida         Boolean   @default(false)
+  enviadaPush  Boolean   @default(false)
+  agendadaPara DateTime?
+  chaveUnica   String?   @unique // evita duplicar o mesmo aviso
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notificacoes")
+}
+
+model PushSubscription {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  endpoint  String  @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+enum StatusImportacao {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDA
+  ERRO
+}
+
+model ImportJob {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tipo        String // clientes | pedidos | produtos
+  formato     String // xlsx | csv | pdf
+  arquivoNome String
+  status      StatusImportacao @default(PENDENTE)
+
+  totalLinhas Int   @default(0)
+  importados  Int   @default(0)
+  atualizados Int   @default(0)
+  ignorados   Int   @default(0)
+  erros       Json?
+  preview     Json?
+  mapeamento  Json?
+
+  createdAt   DateTime  @default(now())
+  concluidoEm DateTime?
+
+  @@index([userId, createdAt])
+  @@map("importacoes")
+}
