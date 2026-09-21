@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
+import { cadastroLiberado } from "@/app/actions/auth";
 import { FormEntrar } from "@/app/entrar/form";
 import { Icone, Marca } from "@/components/icone";
 import { usuarioAtual } from "@/lib/auth";
@@ -15,7 +16,15 @@ export default async function PaginaEntrar() {
   // Se o banco ainda nao tem ninguem, a tela vira cadastro.
   const total = await prisma.user.count().catch(() => -1);
   const primeiroAcesso = total === 0;
-  const temDemo = total > 0 && Boolean(await prisma.user.findUnique({ where: { email: "rep@representei.app" }, select: { id: true } }));
+  const modoCadastro = await cadastroLiberado();
+  const temDemo =
+    total > 0 &&
+    Boolean(
+      await prisma.user.findUnique({
+        where: { email: "rep@representei.app" },
+        select: { id: true },
+      }),
+    );
 
   return (
     <div className="min-h-dvh grid lg:grid-cols-[1.05fr_1fr]">
@@ -87,7 +96,7 @@ export default async function PaginaEntrar() {
           </div>
         </div>
 
-        <FormEntrar primeiroAcesso={primeiroAcesso} temDemo={temDemo} />
+        <FormEntrar primeiroAcesso={primeiroAcesso} temDemo={temDemo} modoCadastro={modoCadastro} />
       </div>
     </div>
   );

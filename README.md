@@ -218,7 +218,61 @@ placas, códigos).
 
 ---
 
-## Publicar no Railway
+## Em produção
+
+O app está no ar em **https://representei-production.up.railway.app**
+
+| Serviço | O que é |
+|---|---|
+| `representei` | A aplicação (Next.js), build por Nixpacks, migração do Prisma no `preDeployCommand` |
+| `Postgres` | Banco `postgres-ssl:16` com volume persistente em `/var/lib/postgresql/data` |
+| `avisos-cron` | Dispara `/api/cron/avisos` toda hora, para as notificações push saírem sozinhas |
+
+A aplicação fala com o banco pela **rede privada** do Railway
+(`postgres.railway.internal`), então a senha do Postgres nunca trafega pela
+internet.
+
+### Primeiro acesso
+
+Com o banco vazio, a tela de entrada vira cadastro: a primeira pessoa que
+acessar cria a conta dona do sistema. **Depois disso o cadastro fecha
+sozinho** — ninguém mais consegue se registrar na URL pública.
+
+Para liberar uma conta nova mais tarde, defina a variável `CONVITE` no
+Railway com um código de pelo menos 6 caracteres. Aí a tela passa a pedir esse
+código. Apague a variável para fechar de novo.
+
+### Deploy a cada push
+
+O token usado para provisionar é um **token de projeto**, que não tem
+permissão para mexer na integração com o GitHub. Então o gatilho automático
+precisa ser ligado de uma destas formas:
+
+1. **No painel** (mais simples): serviço `representei` → Settings → Source →
+   conectar `birizinit/APP-REP` e habilitar *auto deploy*.
+2. **Pelo GitHub Actions**: já existe `.github/workflows/deploy-railway.yml`.
+   Basta adicionar o segredo `RAILWAY_TOKEN` no repositório
+   (Settings → Secrets and variables → Actions). Sem o segredo, a action se
+   ignora em silêncio.
+
+Enquanto nenhuma das duas estiver ligada, o deploy é manual — pelo botão
+*Deploy* no painel do Railway.
+
+### Dados de demonstração em produção
+
+Produção sobe vazia, do jeito certo para uso real. Se quiser ver o app cheio
+de dados antes de começar, habilite o *TCP Proxy* no serviço Postgres
+(painel → Postgres → Settings → Networking), copie o `DATABASE_PUBLIC_URL` e
+rode localmente:
+
+```bash
+DATABASE_URL="<a URL pública>" npm run db:seed
+```
+
+Isso **apaga tudo** e recria a demonstração. Não rode depois de já ter dados
+de verdade.
+
+## Publicar em outro lugar
 
 1. Crie o projeto e adicione um Postgres
 2. Conecte este repositório

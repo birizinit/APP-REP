@@ -9,7 +9,16 @@ import { Campo } from "@/components/ui";
 
 const inicial: EstadoForm = { erro: null };
 
-export function FormEntrar({ primeiroAcesso, temDemo }: { primeiroAcesso: boolean; temDemo: boolean }) {
+export function FormEntrar({
+  primeiroAcesso,
+  temDemo,
+  modoCadastro,
+}: {
+  primeiroAcesso: boolean;
+  temDemo: boolean;
+  /** primeiro = banco vazio · convite = exige código · fechado = só login */
+  modoCadastro: "primeiro" | "convite" | "fechado";
+}) {
   const [modo, setModo] = useState<"entrar" | "criar">(primeiroAcesso ? "criar" : "entrar");
   const acao = modo === "entrar" ? entrar : criarConta;
   const [estado, enviar] = useActionState(acao, inicial);
@@ -30,6 +39,16 @@ export function FormEntrar({ primeiroAcesso, temDemo }: { primeiroAcesso: boolea
         {modo === "criar" ? (
           <Campo rotulo="Seu nome" obrigatorio>
             <input name="nome" className="campo" placeholder="Ex.: João Batista Silva" autoComplete="name" required />
+          </Campo>
+        ) : null}
+
+        {modo === "criar" && modoCadastro === "convite" ? (
+          <Campo
+            rotulo="Código de convite"
+            obrigatorio
+            dica="Quem administra o sistema te passa esse código."
+          >
+            <input name="convite" className="campo cifra" autoComplete="off" required />
           </Campo>
         ) : null}
 
@@ -79,7 +98,7 @@ export function FormEntrar({ primeiroAcesso, temDemo }: { primeiroAcesso: boolea
         <Enviar modo={modo} />
       </form>
 
-      {!primeiroAcesso ? (
+      {!primeiroAcesso && modoCadastro !== "fechado" ? (
         <>
           <div className="flex items-center gap-3 my-6">
             <div className="linha-picotada flex-1" />

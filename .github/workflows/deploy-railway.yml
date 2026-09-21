@@ -1,0 +1,61 @@
+# Deploy automático no Railway a cada push na main.
+#
+# Só roda se o segredo RAILWAY_TOKEN existir no repositório
+# (Settings > Secrets and variables > Actions > New repository secret).
+# Use o token de PROJETO do Railway.
+#
+# Alternativa mais simples: no painel do Railway, em
+# representei > Settings > Source, conectar o repositório.
+# Aí o Railway cria o gatilho sozinho e este arquivo vira dispensável.
+
+name: Deploy no Railway
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: railway-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar se o token está configurado
+        id: check
+        run: |
+          if [ -n "${{ secrets.RAILWAY_TOKEN }}" ]; then
+            echo "tem=sim" >> "$GITHUB_OUTPUT"
+          else
+            echo "tem=nao" >> "$GITHUB_OUTPUT"
+            echo "::notice::RAILWAY_TOKEN não configurado — deploy ignorado."
+          fi
+
+      - name: Disparar deploy
+        if: steps.check.outputs.tem == 'sim'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          SERVICE_ID: dc5eecf0-acf8-40cc-b93c-39001d1bdf0c
+          ENVIRONMENT_ID: 1e60ba83-728a-4a42-beec-752d5280e88a
+        run: |
+          set -euo pipefail
+          corpo=$(jq -n \
+            --arg env "$ENVIRONMENT_ID" \
+            --arg svc "$SERVICE_ID" \
+            --arg sha "$GITHUB_SHA" \
+            '{query:"mutation($environmentId: String!, $serviceId: String!, $commitSha: String) { serviceInstanceDeployV2(environmentId: $environmentId, serviceId: $serviceId, commitSha: $commitSha) }",
+              variables:{environmentId:$env, serviceId:$svc, commitSha:$sha}}')
+
+          resposta=$(curl -sS -X POST https://backboard.railway.com/graphql/v2 \
+            -H "Project-Access-Token: $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$corpo")
+
+          echo "$resposta"
+          if echo "$resposta" | jq -e '.errors' > /dev/null; then
+            echo "::error::Railway recusou o deploy."
+            exit 1
+          fi
+          echo "Deploy disparado: $(echo "$resposta" | jq -r '.data.serviceInstanceDeployV2')"
