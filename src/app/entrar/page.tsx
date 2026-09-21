@@ -9,7 +9,12 @@ import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = { title: "Entrar" };
 
-export default async function PaginaEntrar() {
+export default async function PaginaEntrar({
+  searchParams,
+}: {
+  searchParams: Promise<{ criar?: string }>;
+}) {
+  const { criar } = await searchParams;
   const user = await usuarioAtual();
   if (user) redirect("/");
 
@@ -96,7 +101,12 @@ export default async function PaginaEntrar() {
           </div>
         </div>
 
-        <FormEntrar primeiroAcesso={primeiroAcesso} temDemo={temDemo} modoCadastro={modoCadastro} />
+        <FormEntrar
+          primeiroAcesso={primeiroAcesso}
+          temDemo={temDemo}
+          modoCadastro={modoCadastro}
+          abrirCriando={criar === "1" && modoCadastro !== "fechado"}
+        />
       </div>
     </div>
   );

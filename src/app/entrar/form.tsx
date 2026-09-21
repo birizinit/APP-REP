@@ -13,13 +13,16 @@ export function FormEntrar({
   primeiroAcesso,
   temDemo,
   modoCadastro,
+  abrirCriando = false,
 }: {
   primeiroAcesso: boolean;
   temDemo: boolean;
   /** primeiro = banco vazio · aberto = qualquer um · convite = exige código · fechado = só login */
   modoCadastro: "primeiro" | "aberto" | "convite" | "fechado";
+  /** veio de um "Criar minha conta" da landing */
+  abrirCriando?: boolean;
 }) {
-  const [modo, setModo] = useState<"entrar" | "criar">(primeiroAcesso ? "criar" : "entrar");
+  const [modo, setModo] = useState<"entrar" | "criar">(primeiroAcesso || abrirCriando ? "criar" : "entrar");
   const acao = modo === "entrar" ? entrar : criarConta;
   const [estado, enviar] = useActionState(acao, inicial);
   const [verSenha, setVerSenha] = useState(false);

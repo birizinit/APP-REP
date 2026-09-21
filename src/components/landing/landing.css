@@ -1,0 +1,558 @@
+/* ===========================================================
+   LANDING — a página de vendas do Representei
+   Mesmo sistema "Talão" do app (papel, caneta, carimbo), com mais
+   movimento: é a vitrine. Tudo respeita prefers-reduced-motion.
+   =========================================================== */
+
+.lp {
+  --lp-max: 1180px;
+  overflow-x: clip;
+}
+
+.lp-wrap {
+  max-width: var(--lp-max);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+@media (min-width: 768px) {
+  .lp-wrap { padding: 0 32px; }
+}
+
+/* ---------------- revelar ao rolar ---------------- */
+[data-rv] {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.7s var(--ease-talao),
+    transform 0.8s var(--ease-talao);
+  transition-delay: var(--rv-atraso, 0s);
+}
+[data-rv="esq"] { transform: translateX(-34px); }
+[data-rv="dir"] { transform: translateX(34px); }
+[data-rv="zoom"] { transform: scale(0.92); }
+[data-rv].lp-visto {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------------- barra de progresso da leitura ---------------- */
+.lp-progresso {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 70;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, var(--color-caneta), var(--color-quitado));
+}
+
+/* ---------------- navegação ---------------- */
+.lp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  border-bottom: 1px solid transparent;
+}
+.lp-nav.lp-rolou {
+  background: color-mix(in oklab, var(--color-papel) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom-color: var(--color-papel-borda);
+}
+.lp-link {
+  position: relative;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-tinta-2);
+  transition: color 0.2s ease;
+}
+.lp-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-caneta);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 0.35s var(--ease-talao);
+}
+.lp-link:hover { color: var(--color-tinta); }
+.lp-link:hover::after { transform: scaleX(1); }
+
+/* ---------------- botão principal com brilho ---------------- */
+.lp-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: var(--shadow-grampo);
+  transition: transform 0.25s var(--ease-talao), box-shadow 0.25s ease, background 0.2s ease;
+}
+.lp-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: lp-brilho 3.6s ease-in-out infinite;
+}
+.lp-cta:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 18px 44px -16px color-mix(in oklab, var(--color-caneta) 75%, transparent);
+}
+.lp-cta:hover .lp-seta { transform: translateX(4px); }
+.lp-seta { transition: transform 0.25s var(--ease-talao); }
+@keyframes lp-brilho {
+  0%, 55% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+/* ---------------- hero ---------------- */
+.lp-hero {
+  position: relative;
+}
+.lp-hero::before {
+  /* o azul da caneta vazando no papel */
+  content: "";
+  position: absolute;
+  width: 720px;
+  height: 720px;
+  right: -260px;
+  top: -220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--color-caneta) 16%, transparent), transparent 65%);
+  pointer-events: none;
+  animation: lp-respirar 9s ease-in-out infinite;
+}
+@keyframes lp-respirar {
+  0%, 100% { transform: scale(1) translate(0, 0); }
+  50% { transform: scale(1.08) translate(-20px, 16px); }
+}
+
+.lp-titulo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  color: var(--color-tinta);
+}
+
+/* palavra riscada à caneta */
+.lp-risco {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+.lp-risco svg {
+  position: absolute;
+  left: -4%;
+  width: 108%;
+  top: 52%;
+  height: 0.42em;
+  overflow: visible;
+  pointer-events: none;
+}
+.lp-risco path {
+  stroke: var(--color-carimbo);
+  stroke-width: 5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: lp-riscar 0.9s var(--ease-talao) 0.9s forwards;
+}
+@keyframes lp-riscar {
+  to { stroke-dashoffset: 0; }
+}
+
+/* sublinhado de marca-texto */
+.lp-marca {
+  background: linear-gradient(transparent 58%, color-mix(in oklab, var(--color-via-amarela) 75%, transparent) 58%);
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  animation: lp-marcar 0.9s var(--ease-talao) 1.5s forwards;
+  padding: 0 0.06em;
+}
+@keyframes lp-marcar {
+  to { background-size: 100% 100%; }
+}
+
+/* título que sobe letra a letra (palavra a palavra) */
+.lp-palavra {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.5em) rotate(2deg);
+  animation: lp-palavra 0.7s var(--ease-talao) forwards;
+}
+/* mesma entrada, para blocos (não força inline-block) */
+.lp-surge {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: lp-palavra 0.7s var(--ease-talao) forwards;
+}
+.lp .carimbo { white-space: nowrap; }
+
+@keyframes lp-palavra {
+  to { opacity: 1; transform: none; }
+}
+
+.lp-selo-vivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-papel-borda);
+  background: var(--color-papel-alto);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-tinta-2);
+  box-shadow: var(--shadow-papel);
+}
+.lp-ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-quitado);
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-quitado) 60%, transparent);
+  animation: lp-pulso 1.8s ease-out infinite;
+}
+@keyframes lp-pulso {
+  70% { box-shadow: 0 0 0 9px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ---------------- talão empilhado do hero ---------------- */
+.lp-pilha {
+  position: relative;
+  perspective: 1200px;
+}
+.lp-folha {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-cartao);
+  border: 1px solid var(--color-papel-borda);
+  transition: transform 0.6s var(--ease-talao);
+}
+.lp-folha-rosa { background: color-mix(in oklab, var(--color-via-rosa) 55%, var(--color-papel-alto)); transform: rotate(-6deg) translate(-14px, 12px); }
+.lp-folha-amarela { background: color-mix(in oklab, var(--color-via-amarela) 55%, var(--color-papel-alto)); transform: rotate(4deg) translate(12px, 8px); }
+.lp-pilha:hover .lp-folha-rosa { transform: rotate(-10deg) translate(-30px, 18px); }
+.lp-pilha:hover .lp-folha-amarela { transform: rotate(8deg) translate(28px, 10px); }
+
+.lp-folha-topo {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+}
+
+.lp-flutua {
+  animation: lp-flutuar 5.5s ease-in-out infinite;
+}
+.lp-flutua-2 {
+  animation: lp-flutuar 6.5s ease-in-out -2s infinite;
+}
+@keyframes lp-flutuar {
+  0%, 100% { transform: translateY(0) rotate(var(--giro, 0deg)); }
+  50% { transform: translateY(-10px) rotate(var(--giro, 0deg)); }
+}
+
+.lp-entra-toast {
+  opacity: 0;
+  animation: lp-toast 0.7s var(--ease-talao) forwards;
+}
+@keyframes lp-toast {
+  from { opacity: 0; transform: translateY(-16px) scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+
+/* carimbo que cai (reusa o do app, com atraso) */
+.lp-carimbo-cai {
+  opacity: 0;
+  animation: bater-carimbo 0.55s var(--ease-talao) forwards;
+}
+
+/* ---------------- faixa rolante ---------------- */
+.lp-faixa {
+  overflow: hidden;
+  border-block: 1.5px solid var(--color-tinta);
+  background: var(--color-tinta);
+  color: var(--color-papel);
+  transform: rotate(-1.4deg);
+  margin-inline: -30px;
+}
+.lp-faixa-trilho {
+  display: flex;
+  width: max-content;
+  animation: lp-rolar 38s linear infinite;
+}
+.lp-faixa:hover .lp-faixa-trilho { animation-play-state: paused; }
+@keyframes lp-rolar {
+  to { transform: translateX(-50%); }
+}
+
+/* ---------------- cartões de dor ---------------- */
+.lp-dor {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 0.35s var(--ease-talao),
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.35s ease;
+}
+.lp-dor:hover {
+  transform: translateY(-4px) rotate(-0.4deg);
+  box-shadow: var(--shadow-erguido);
+}
+.lp-dor:active { transform: scale(0.98); }
+.lp-dor[aria-pressed="true"] {
+  border-color: var(--color-carimbo);
+  background: color-mix(in oklab, var(--color-carimbo-fundo) 55%, var(--color-papel-alto));
+}
+.lp-dor-selo {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  color: var(--color-carimbo);
+}
+
+.lp-medidor {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--color-papel-fundo);
+  overflow: hidden;
+  border: 1px solid var(--color-papel-borda);
+}
+.lp-medidor-barra {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-ambar), var(--color-carimbo));
+  transition: width 0.6s var(--ease-talao);
+}
+
+/* ---------------- sliders ---------------- */
+.lp-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  outline: none;
+  background: linear-gradient(
+    to right,
+    var(--color-caneta) 0%,
+    var(--color-caneta) var(--preenchido, 50%),
+    var(--color-papel-fundo) var(--preenchido, 50%),
+    var(--color-papel-fundo) 100%
+  );
+  cursor: pointer;
+}
+.lp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-papel-alto);
+  border: 3px solid var(--color-caneta);
+  box-shadow: 0 4px 14px -4px color-mix(in oklab, var(--color-caneta) 70%, transparent);
+  transition: transform 0.15s ease;
+}
+.lp-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.lp-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-papel-alto);
+  border: 3px solid var(--color-caneta);
+}
+.lp-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--color-caneta) 30%, transparent);
+}
+
+/* número que pulsa quando muda */
+.lp-pulsa {
+  animation: lp-pulsar 0.45s var(--ease-talao);
+}
+@keyframes lp-pulsar {
+  40% { transform: scale(1.06); }
+}
+
+/* ---------------- simulador de rota ---------------- */
+.lp-mapa {
+  background-color: var(--color-papel-alto);
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--color-tinta) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-tinta) 6%, transparent) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+.lp-trajeto {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lp-trajeto-desenha {
+  animation: lp-desenhar 1.4s var(--ease-talao) forwards;
+}
+@keyframes lp-desenhar {
+  to { stroke-dashoffset: 0; }
+}
+.lp-parada {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lp-parada 0.5s var(--ease-talao) both;
+}
+@keyframes lp-parada {
+  from { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  to { transform: scale(1); }
+}
+.lp-carro {
+  offset-rotate: auto;
+  animation: lp-dirigir 3.2s var(--ease-talao) 0.4s both;
+}
+@keyframes lp-dirigir {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+
+/* ---------------- bento de recursos ---------------- */
+.lp-bento {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.4s var(--ease-talao), box-shadow 0.4s ease, border-color 0.3s ease;
+}
+.lp-bento::after {
+  /* luz que segue o mouse */
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    380px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in oklab, var(--color-caneta) 12%, transparent),
+    transparent 60%
+  );
+}
+.lp-bento:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-erguido);
+  border-color: color-mix(in oklab, var(--color-caneta) 35%, var(--color-papel-borda));
+}
+.lp-bento:hover::after { opacity: 1; }
+
+.lp-digitando::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: var(--color-caneta);
+  animation: lp-cursor 0.8s steps(1) infinite;
+}
+@keyframes lp-cursor {
+  50% { opacity: 0; }
+}
+
+.lp-barra-cresce {
+  transform-origin: bottom;
+  transform: scaleY(0);
+  transition: transform 0.9s var(--ease-talao);
+}
+.lp-visto .lp-barra-cresce { transform: scaleY(1); }
+
+.lp-notif {
+  animation: lp-notif 7.5s var(--ease-talao) infinite;
+  animation-delay: var(--n-atraso, 0s);
+  opacity: 0;
+}
+@keyframes lp-notif {
+  0% { opacity: 0; transform: translateY(-14px) scale(0.96); }
+  8%, 72% { opacity: 1; transform: none; }
+  82%, 100% { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+/* ---------------- FAQ ---------------- */
+.lp-faq summary {
+  list-style: none;
+  cursor: pointer;
+}
+.lp-faq summary::-webkit-details-marker { display: none; }
+.lp-faq .lp-mais {
+  transition: transform 0.35s var(--ease-talao);
+}
+.lp-faq[open] .lp-mais { transform: rotate(45deg); }
+.lp-faq-corpo {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s var(--ease-talao);
+}
+.lp-faq[open] .lp-faq-corpo { grid-template-rows: 1fr; }
+
+/* ---------------- CTA final ---------------- */
+.lp-final {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-tinta);
+  color: var(--color-papel);
+}
+.lp-final::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    color-mix(in oklab, var(--color-caneta) 45%, transparent),
+    transparent 30%,
+    color-mix(in oklab, var(--color-quitado) 30%, transparent),
+    transparent 60%
+  );
+  animation: lp-girar 16s linear infinite;
+  opacity: 0.55;
+  filter: blur(70px);
+}
+@keyframes lp-girar {
+  to { transform: rotate(1turn); }
+}
+
+/* confete de papel picado */
+.lp-confete {
+  position: absolute;
+  top: -12px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: lp-cair var(--dur, 2.4s) cubic-bezier(0.2, 0.6, 0.4, 1) forwards;
+  animation-delay: var(--atraso, 0s);
+}
+@keyframes lp-cair {
+  from { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 1; }
+  to { transform: translate3d(var(--dx, 0px), 520px, 0) rotate(var(--giro, 540deg)); opacity: 0; }
+}
+
+/* ---------------- movimento reduzido ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  [data-rv] { opacity: 1; transform: none; transition: none; }
+  .lp-palavra, .lp-surge, .lp-entra-toast, .lp-carimbo-cai { opacity: 1; animation: none; transform: none; }
+  .lp-risco path { animation: none; stroke-dashoffset: 0; }
+  .lp-marca { animation: none; background-size: 100% 100%; }
+  .lp-faixa-trilho, .lp-flutua, .lp-flutua-2, .lp-hero::before, .lp-final::before,
+  .lp-cta::before, .lp-carro, .lp-ponto { animation: none; }
+  .lp-notif { animation: none; opacity: 1; }
+  .lp-trajeto-desenha { animation: none; stroke-dashoffset: 0; }
+  .lp-barra-cresce { transform: none; transition: none; }
+  .lp-confete { display: none; }
+}
