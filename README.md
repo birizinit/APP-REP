@@ -235,8 +235,10 @@ internet.
 ### Primeiro acesso
 
 Com o banco vazio, a tela de entrada vira cadastro: a primeira pessoa que
-acessar cria a conta dona do sistema. **Depois disso o cadastro fecha
-sozinho** — ninguém mais consegue se registrar na URL pública.
+acessar cria a conta dona do sistema (administradora). **Depois disso o
+cadastro continua aberto** na tela de entrada ("Criar uma conta nova"):
+qualquer pessoa cria a própria conta, e cada conta só vê os próprios dados.
+Para fechar, defina `CADASTRO_FECHADO=1` no Railway.
 
 Essa primeira conta é a **administradora**. Para criar as contas dos outros,
 ela usa o menu **Usuários** (só aparece para administrador): nome, e-mail e

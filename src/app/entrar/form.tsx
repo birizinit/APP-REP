@@ -16,8 +16,8 @@ export function FormEntrar({
 }: {
   primeiroAcesso: boolean;
   temDemo: boolean;
-  /** primeiro = banco vazio · convite = exige código · fechado = só login */
-  modoCadastro: "primeiro" | "convite" | "fechado";
+  /** primeiro = banco vazio · aberto = qualquer um · convite = exige código · fechado = só login */
+  modoCadastro: "primeiro" | "aberto" | "convite" | "fechado";
 }) {
   const [modo, setModo] = useState<"entrar" | "criar">(primeiroAcesso ? "criar" : "entrar");
   const acao = modo === "entrar" ? entrar : criarConta;

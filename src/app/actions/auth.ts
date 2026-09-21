@@ -27,18 +27,19 @@ export async function entrar(_anterior: EstadoForm, dados: FormData): Promise<Es
 }
 
 /**
- * Cadastro so e liberado em duas situacoes:
- *  1. o banco esta vazio (primeiro acesso, quem instalou cria a conta);
- *  2. existe um codigo de convite em CONVITE e a pessoa informou o certo.
- *
- * Sem isso, um app de um representante so, publicado numa URL publica,
- * aceitaria cadastro de qualquer visitante.
+ * O cadastro na tela de entrada fica ABERTO: qualquer pessoa cria a propria
+ * conta (cada conta so ve os proprios dados). Interruptores no Railway:
+ *  - CONVITE (6+ caracteres): passa a exigir esse codigo;
+ *  - CADASTRO_FECHADO=1: fecha; contas novas so pela tela Usuarios (admin).
+ * Com o banco vazio, quem entra primeiro cria a conta dona (admin).
  */
-export async function cadastroLiberado(): Promise<"primeiro" | "convite" | "fechado"> {
+export async function cadastroLiberado(): Promise<"primeiro" | "aberto" | "convite" | "fechado"> {
   const total = await prisma.user.count().catch(() => -1);
   if (total === 0) return "primeiro";
-  if (total > 0 && (process.env.CONVITE ?? "").length >= 6) return "convite";
-  return "fechado";
+  if (total < 0) return "fechado"; // banco fora: nao arriscar
+  if ((process.env.CONVITE ?? "").length >= 6) return "convite";
+  if (process.env.CADASTRO_FECHADO === "1") return "fechado";
+  return "aberto";
 }
 
 export async function criarConta(_anterior: EstadoForm, dados: FormData): Promise<EstadoForm> {
