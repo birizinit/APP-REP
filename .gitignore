@@ -19,3 +19,6 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 .pgdata/
 .preview/
+
+# Criativos de anuncio: material de marketing, fica so na maquina
+criativos/

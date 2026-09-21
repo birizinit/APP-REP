@@ -5,7 +5,7 @@
  * pedido, quando cada parcela cai e quanto sobra depois do imposto.
  */
 
-import { competenciaDe, num, somaDias } from "@/lib/format";
+import { competenciaDe, dinheiro, numeroBR, num, somaDias } from "@/lib/format";
 
 export type BaseCalculo = "VALOR_BRUTO" | "VALOR_LIQUIDO" | "VALOR_RECEBIDO" | "MARGEM";
 export type GatilhoComissao =
@@ -163,7 +163,7 @@ export function calcularComissao(
     const fator = somaItens > 0 ? base / somaItens : 1;
     valorBruto = somaComissao * fator;
     percentual = base > 0 ? (valorBruto / base) * 100 : percentual;
-    explicacao = `Percentual por linha de produto (média de ${percentual.toFixed(2)}%).`;
+    explicacao = `Percentual por linha de produto (média de ${numeroBR(percentual, 2)}%).`;
   } else if (plano.tipoFaixa === "PROGRESSIVO") {
     const acumuladoComEste = acumuladoPeriodo + base;
     percentual = percentualDaFaixa(plano.faixas, acumuladoComEste, num(plano.percentualPadrao));
@@ -172,12 +172,12 @@ export function calcularComissao(
       const ate = f.ateValor === null || f.ateValor === undefined ? Infinity : num(f.ateValor);
       return acumuladoComEste >= de && acumuladoComEste < ate;
     });
-    faixaAplicada = faixa?.rotulo ?? (faixa ? `A partir de ${faixa.deValor}` : null);
+    faixaAplicada = faixa?.rotulo ?? (faixa ? `A partir de ${dinheiro(faixa.deValor)}` : null);
     valorBruto = (base * percentual) / 100;
-    explicacao = `Faixa progressiva: com este pedido o acumulado do período chega a ${acumuladoComEste.toFixed(2)}, o que cai na faixa de ${percentual}%.`;
+    explicacao = `Faixa progressiva: com este pedido o acumulado do mês chega a ${dinheiro(acumuladoComEste)}, que cai na faixa de ${numeroBR(percentual, 2).replace(/,00$/, "")}%.`;
   } else {
     valorBruto = (base * percentual) / 100;
-    explicacao = `${percentual}% sobre ${rotuloBase[plano.baseCalculo].toLowerCase()}.`;
+    explicacao = `${numeroBR(percentual, 2).replace(/,00$/, "")}% sobre ${rotuloBase[plano.baseCalculo].toLowerCase()}.`;
   }
 
   // Bonus por meta do periodo
