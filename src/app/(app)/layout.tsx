@@ -12,7 +12,7 @@ export default async function LayoutApp({ children }: { children: React.ReactNod
 
   return (
     <Casca
-      usuario={{ nome: user.nome, email: user.email, avatarUrl: user.avatarUrl }}
+      usuario={{ nome: user.nome, email: user.email, avatarUrl: user.avatarUrl, admin: user.admin }}
       naoLidas={naoLidas}
     >
       {children}

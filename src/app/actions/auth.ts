@@ -69,6 +69,8 @@ export async function criarConta(_anterior: EstadoForm, dados: FormData): Promis
       nome,
       email,
       senhaHash: await hashSenha(senha),
+      // quem abre o sistema vazio e o dono; por convite, conta comum
+      admin: liberado === "primeiro",
       jornadaInicio: "08:00",
       jornadaFim: "18:00",
     },

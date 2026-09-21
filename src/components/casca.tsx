@@ -39,6 +39,13 @@ const atalhos = [
   { href: "/comissoes?baixa=1", rotulo: "Dar baixa", icone: "carimboIcone" as const, detalhe: "Registrar comissão recebida" },
 ];
 
+const itemUsuarios: Item = { href: "/usuarios", rotulo: "Usuários", icone: "usuario" };
+
+/** A tela de usuarios so aparece para quem administra. */
+function itensSecundarios(admin?: boolean): Item[] {
+  return admin ? [...secundarios, itemUsuarios] : secundarios;
+}
+
 function ativo(pathname: string, item: Item) {
   if (item.exato) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -49,7 +56,7 @@ export function Casca({
   naoLidas,
   children,
 }: {
-  usuario: { nome: string; email: string; avatarUrl: string | null };
+  usuario: { nome: string; email: string; avatarUrl: string | null; admin?: boolean };
   naoLidas: number;
   children: React.ReactNode;
 }) {
@@ -101,7 +108,7 @@ export function Casca({
           <div className="linha-picotada my-4 mx-2" />
 
           <div className="space-y-0.5">
-            {secundarios.map((item) => (
+            {itensSecundarios(usuario.admin).map((item) => (
               <LinkNav key={item.href} item={item} ativo={ativo(pathname, item)} />
             ))}
           </div>
@@ -295,7 +302,7 @@ function MenuUsuario({
   usuario,
   fechar,
 }: {
-  usuario: { nome: string; email: string; avatarUrl: string | null };
+  usuario: { nome: string; email: string; avatarUrl: string | null; admin?: boolean };
   fechar: () => void;
 }) {
   const router = useRouter();
@@ -361,7 +368,7 @@ function MenuUsuario({
             <div className="linha-picotada my-1.5 mx-1" />
 
             <div className="lg:hidden">
-              {secundarios.map((item) => (
+              {itensSecundarios(usuario.admin).map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -396,7 +403,7 @@ function BlocoUsuario({
   aberto,
   alternar,
 }: {
-  usuario: { nome: string; email: string; avatarUrl: string | null };
+  usuario: { nome: string; email: string; avatarUrl: string | null; admin?: boolean };
   aberto: boolean;
   alternar: () => void;
 }) {

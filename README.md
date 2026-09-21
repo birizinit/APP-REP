@@ -238,9 +238,15 @@ Com o banco vazio, a tela de entrada vira cadastro: a primeira pessoa que
 acessar cria a conta dona do sistema. **Depois disso o cadastro fecha
 sozinho** — ninguém mais consegue se registrar na URL pública.
 
-Para liberar uma conta nova mais tarde, defina a variável `CONVITE` no
-Railway com um código de pelo menos 6 caracteres. Aí a tela passa a pedir esse
-código. Apague a variável para fechar de novo.
+Essa primeira conta é a **administradora**. Para criar as contas dos outros,
+ela usa o menu **Usuários** (só aparece para administrador): nome, e-mail e
+uma senha provisória, que a pessoa troca depois em Ajustes. Na mesma tela dá
+para redefinir a senha de alguém e promover outra conta a administradora.
+O sistema nunca fica sem administrador: o último não pode ser rebaixado.
+
+Alternativa: defina a variável `CONVITE` no Railway com um código de pelo menos
+6 caracteres e a tela de entrada passa a aceitar cadastro com esse código.
+Apague a variável para fechar de novo.
 
 ### Deploy a cada push
 
